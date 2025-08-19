@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>QuestMaster To-Do</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"/>
+  <style>
+    body, html {
+      min-height: 100vh;
+      margin: 0;
+      background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+      font-family: 'Press Start 2P', cursive, monospace;
+      overflow: hidden;
+    }
+
+    /* Confetti canvas */
+    #confetti-canvas {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Layout container */
+    .container {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      position: relative;
+      z-index: 1;
+    }
+    /* Central glowing box */
+    .main-box {
+      margin-top: 6vh;
+      background: rgba(20,30,60,0.85);
+      border-radius: 26px;
+      box-shadow: 0 0 30px #46f, 0 0 60px #a6f;
+      border: 3px solid #5af;
+      padding: 2.6rem 2rem 2.2rem 2rem;
+      width: 380px;
+      text-align: center;
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .main-box h1 {
+      color: #9ff;
+      font-size: 2rem;
+      margin: 0 0 2.1rem 0;
+      text-shadow: 0 0 12px #6af, 0 0 42px #49f;
+      letter-spacing: 2.5px;
+    }
+    .input-area {
+      margin-top: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      position: relative;
+    }
+    .input-area input {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 1rem;
+      width: 90%;
+      border-radius: 16px;
+      padding: 0.8rem 1rem;
+      margin-bottom: 18px;
+      border: 2px solid #5af;
+      background: rgba(35,40,74,0.96);
+      color: #aee;
+      box-shadow: 0 0 12px #6af inset;
+      outline: none;
+      text-align: center;
+      transition: border-color 0.25s;
+    }
+    .input-area input::placeholder {
+      color: #e2e7ff88;
+      font-size: 0.95rem;
+      letter-spacing: 1px;
+    }
+    .input-area input:focus {
+      border-color: #b9f;
+    }
+    .input-area button {
+      width: 75%;
+      margin: 0 auto;
+      border: none;
+      border-radius: 16px;
+      background: linear-gradient(145deg, #4a70ff, #2659ff);
+      color: #fff;
+      font-weight: bold;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 1rem;
+      padding: 0.8rem 0;
+      box-shadow: 0 0 14px #6af;
+      cursor: pointer;
+      letter-spacing: 1.8px;
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+    .input-area button:hover {
+      background: linear-gradient(145deg, #5c8fff, #49f);
+      box-shadow: 0 0 32px #a6f;
+    }
+
+    /* Flex bottom area for quests and points */
+    .bottom-area {
+      width: 730px;
+      margin-top: 30px;
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 32px;
+    }
+
+    .neon-box {
+      background: rgba(20,30,60,0.95);
+      border-radius: 22px;
+      border: 3px solid #5af;
+      box-shadow: 0 0 18px #46f, 0 0 32px #a6f;
+      min-width: 270px;
+      min-height: 260px;
+      padding: 1.5rem 1.2rem 1.3rem 1.2rem;
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Points neon-box styling */
+    .points-box {
+      justify-content: center;
+    }
+    .points-title {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      color: #90f2ef;
+      text-shadow: 0 0 12px #2afeff;
+      letter-spacing: 2px;
+    }
+    .points-value {
+      font-size: 2.5rem;
+      color: #fff9b0;
+      text-shadow: 0 0 24px #ffe44f, 0 0 6px #ffd700;
+      font-family: 'Press Start 2P', monospace;
+    }
+    .star-symbol {
+      font-size: 2.2rem;
+      color: #ffd700;
+      text-shadow: 0 0 16px #ffe44f;
+      margin-top: 12px;
+    }
+
+    /* Quests neon-box styling */
+    .quests-title {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      color: #90c1ff;
+      text-shadow: 0 0 11px #4a8eff;
+      letter-spacing: 2px;
+    }
+    #task-list {
+      list-style: none;
+      padding: 0; margin: 0;
+      width: 100%;
+      max-height: 170px;
+      overflow-y: auto;
+      flex-grow: 1;
+    }
+    #task-list li {
+      background: linear-gradient(135deg, #3752c6, #4e6eff);
+      border-radius: 13px;
+      padding: 0.55rem 0.3rem 0.55rem 1.1rem;
+      color: #e0e6f8;
+      margin-bottom: 7px;
+      display: flex;
+      align-items: center;
+      font-size: 0.95rem;
+      font-family: 'Press Start 2P', monospace;
+      box-shadow: 0 0 18px #4a70ffaa;
+      transition: box-shadow 0.3s, background 0.3s;
+      cursor: pointer;
+    }
+    #task-list li:hover {
+      box-shadow: 0 0 26px #9ff;
+      background: #5876e0;
+    }
+    input[type="checkbox"] {
+      width: 25px; height: 25px;
+      accent-color: #4fc3ff;
+      margin-right: 1.3rem;
+      cursor: pointer;
+    }
+    #task-list .done { text-decoration: line-through; color: #9bbdef88; }
+    .del-btn {
+      background: none; border: none;
+      color: #448cff; font-size: 1.35rem;
+      cursor: pointer; margin-left: 0.5rem;
+      transition: color 0.2s;
+      font-family: 'Press Start 2P', monospace;
+    }
+    .del-btn:hover { color: #ff4f4f; }
+  </style>
+</head>
+<body>
+  <canvas id="confetti-canvas"></canvas>
+
+  <div class="container">
+    <!-- Main central title and input box -->
+    <div class="main-box">
+      <h1>QuestMaster<br>To-Do</h1>
+      <div class="input-area">
+        <input type="text" id="task-input" placeholder="Enter your next quest..."/>
+        <button onclick="addTask()">SAVE QUEST</button>
+      </div>
+    </div>
+
+    <!-- Split bottom row: quests (left), points (right) -->
+    <div class="bottom-area">
+      <div class="neon-box quests-box">
+        <div class="quests-title">Saved Quests</div>
+        <ul id="task-list"></ul>
+      </div>
+      <div class="neon-box points-box">
+        <div class="points-title">Points Earned</div>
+        <div class="points-value" id="points">0</div>
+        <div class="star-symbol">&#9733;</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- Confetti ---
+    const confettiCanvas = document.getElementById('confetti-canvas');
+    const ctx = confettiCanvas.getContext('2d');
+    function resizeCanvas() {
+      confettiCanvas.width = window.innerWidth;
+      confettiCanvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    let confettiPieces = [];
+    class ConfettiPiece {
+      constructor() {
+        this.x = Math.random() * confettiCanvas.width;
+        this.y = Math.random() * -confettiCanvas.height;
+        this.size = Math.random() * 7 + 3;
+        this.color = `hsl(${Math.random() * 360}, 100%, 65%)`;
+        this.speed = Math.random() * 2 + 1;
+        this.angle = Math.random() * 2 * Math.PI;
+        this.spin = (Math.random() - 0.5) * 0.2;
+      }
+      update() {
+        this.y += this.speed;
+        this.angle += this.spin;
+        if (this.y > confettiCanvas.height) {
+          this.y = Math.random() * -confettiCanvas.height;
+          this.x = Math.random() * confettiCanvas.width;
+        }
+      }
+      draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        ctx.fillStyle = this.color;
+        ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size * 0.4);
+        ctx.restore();
+      }
+    }
+    function initConfetti() {
+      confettiPieces = [];
+      for (let i = 0; i < 80; i++) {
+        confettiPieces.push(new ConfettiPiece());
+      }
+    }
+    function animateConfetti() {
+      ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+      confettiPieces.forEach(c => {
+        c.update();
+        c.draw();
+      });
+      requestAnimationFrame(animateConfetti);
+    }
+    initConfetti();
+    animateConfetti();
+
+    // --- Main logic ---
+    let points = 0;
+    const pointsDisplay = document.getElementById('points');
+    async function fetchTasks() {
+      const response = await fetch('/api/tasks');
+      const tasks = await response.json();
+      const list = document.getElementById('task-list');
+      list.innerHTML = '';
+      tasks.forEach(task => {
+        const li = document.createElement('li');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = task.done;
+        checkbox.onclick = e => { e.stopPropagation(); toggleDone(task.id, checkbox.checked); };
+        li.appendChild(checkbox);
+
+        const titleSpan = document.createElement('span');
+        titleSpan.textContent = task.title;
+        if (task.done) titleSpan.classList.add('done');
+        li.appendChild(titleSpan);
+
+        const delBtn = document.createElement('button');
+        delBtn.textContent = '×';
+        delBtn.classList.add('del-btn');
+        delBtn.onclick = e => { e.stopPropagation(); deleteTask(task.id); };
+        li.appendChild(delBtn);
+
+        list.appendChild(li);
+      });
+      updatePoints(tasks);
+    }
+    async function addTask() {
+      const input = document.getElementById('task-input');
+      const title = input.value.trim();
+      if (!title) { alert('Quest cannot be empty!'); return; }
+      await fetch('/api/tasks', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({title}),
+      });
+      input.value = '';
+      fetchTasks();
+    }
+    async function toggleDone(id, done) {
+      await fetch(`/api/tasks/${id}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({done}),
+      });
+      fetchTasks();
+    }
+    async function deleteTask(id) {
+      await fetch(`/api/tasks/${id}`, { method: 'DELETE', });
+      fetchTasks();
+    }
+    function updatePoints(tasks) {
+      points = tasks.filter(t => t.done).length * 10; // 10 points per quest
+      pointsDisplay.textContent = points;
+    }
+    window.onload = fetchTasks;
+  </script>
+</body>
+</html>
